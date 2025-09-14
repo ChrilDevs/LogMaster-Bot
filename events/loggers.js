@@ -66,7 +66,7 @@ module.exports = client => {
 
     const embed = new EmbedBuilder()
       .setColor("Green")
-      .setTitle("✅ Member Unbanned")
+      .setTitle("✅ Member Unbanned ")
       .setThumbnail(ban.user.displayAvatarURL())
       .addFields(
         { name: "User", value: `${ban.user.tag} (${ban.user.id})` },
