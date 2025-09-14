@@ -15,16 +15,15 @@ module.exports = {
         { name: "/togglelog", value: "Enable or disable a specific log type" },
         { name: "/listlogs", value: "List all configured logs for this server" },
         { name: "/help", value: "Show this help message" },
-        { name: "Tip", value: "You can set all logs to one channel using `/setalllogs` " }
+        { name: "Tip", value: "You can set all logs to one channel using `/setalllogs`" }
       )
       .setTimestamp()
       .setFooter({ text: "LogMaster v1" });
 
-    // Non ephemeral, visibile a tutti
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({ embeds: [embed] });
     } else {
-      await interaction.followUp({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
     }
   }
 };

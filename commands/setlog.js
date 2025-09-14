@@ -32,6 +32,8 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
+    await interaction.deferReply({ ephemeral: true });
+
     const logType = interaction.options.getString("type");
     const channel = interaction.options.getChannel("channel");
 
@@ -47,11 +49,6 @@ module.exports = {
     config.logs[logType].channelId = channel.id;
 
     await config.save();
-
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: `✅ Logs for **${logType}** will be sent in ${channel}`, ephemeral: true });
-    } else {
-      await interaction.followUp({ content: `✅ Logs for **${logType}** will be sent in ${channel}`, ephemeral: true });
-    }
+    await interaction.editReply({ content: `✅ Logs for **${logType}** will be sent in ${channel}` });
   }
 };
