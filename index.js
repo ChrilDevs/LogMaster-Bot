@@ -1,7 +1,7 @@
 require("dotenv").config();
+const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js");
 const mongoose = require("mongoose");
 
 const client = new Client({
@@ -9,26 +9,26 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildBans,
-    GatewayIntentBits.GuildEmojisAndStickers,
-    GatewayIntentBits.GuildIntegrations,
-    GatewayIntentBits.GuildMessageReactions
-  ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildBans
+  ]
 });
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.log("❌ MongoDB connection error:", err));
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
+
 for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));
   client.commands.set(command.data.name, command);
 }
+
+require("./events/loggers")(client);
+
+mongoose.connect(process.env.MONGO_URI, { dbName: "logmaster" })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(console.error);
 
 client.once("clientReady", async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
@@ -43,20 +43,18 @@ client.once("clientReady", async () => {
 });
 
 client.on("interactionCreate", async interaction => {
-  if (!interaction.isCommand()) return;
-
+  if (!interaction.isChatInputCommand()) return;
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
 
   try {
-    await command.execute(interaction);
+    await command.execute(interaction, client);
   } catch (err) {
-    console.error(err);
-    if (!interaction.replied) await interaction.reply({ content: "❌ Error executing command.", flags: 64 });
-    else await interaction.followUp({ content: "❌ Error executing command.", flags: 64 });
+    console.error(`❌ Error executing command ${interaction.commandName}:`, err);
+    if (!interaction.replied) {
+      await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
+    }
   }
 });
-
-require("./events/loggers")(client);
 
 client.login(process.env.TOKEN);

@@ -1,26 +1,20 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("listlogs")
-    .setDescription("Show all log settings"),
+    .setDescription("Show the current log settings"),
+
   async execute(interaction) {
     const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) return interaction.reply({ content: "❌ No logs configured.", flags: 64 });
+    if (!config) return interaction.reply({ content: "No logs configured yet.", ephemeral: true });
 
-    const embed = new EmbedBuilder()
-      .setTitle(`📑 Log Settings for ${interaction.guild.name}`)
-      .setColor("Blue");
-
-    for (const [type, info] of Object.entries(config.logs)) {
-      embed.addFields({
-        name: type,
-        value: `${info.enabled ? "✅ Enabled" : "❌ Disabled"}${info.channelId ? `\n📺 Channel: <#${info.channelId}>` : ""}`,
-        inline: false
-      });
+    let msg = `📑 Log Settings for ${interaction.guild.name}\n`;
+    for (const [type, data] of Object.entries(config.logs)) {
+      msg += `📌 ${type}\n${data.enabled ? "✅ Enabled" : "❌ Disabled"}\n${data.channelId ? `📺 Channel: <#${data.channelId}>\n` : ""}`;
     }
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply({ content: msg, ephemeral: true });
   }
 };

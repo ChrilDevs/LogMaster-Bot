@@ -77,5 +77,4 @@ module.exports = client => {
 
     await sendLog(ban.guild, "banRemove", embed);
   });
-
 };

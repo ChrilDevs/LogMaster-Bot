@@ -1,28 +1,28 @@
 const mongoose = require("mongoose");
 
-const LogSchema = new mongoose.Schema({
+const logSchema = new mongoose.Schema({
   enabled: { type: Boolean, default: false },
-  channelId: { type: String, default: null }
+  channelId: { type: String, default: null },
 });
 
-const GuildConfigSchema = new mongoose.Schema({
+const guildConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
   logs: {
-    messageDelete: { type: LogSchema, default: () => ({}) },
-    messageUpdate: { type: LogSchema, default: () => ({}) },
-    memberAdd: { type: LogSchema, default: () => ({}) },
-    memberRemove: { type: LogSchema, default: () => ({}) },
-    banAdd: { type: LogSchema, default: () => ({}) },
-    banRemove: { type: LogSchema, default: () => ({}) },
-    roleCreate: { type: LogSchema, default: () => ({}) },
-    roleUpdate: { type: LogSchema, default: () => ({}) },
-    roleDelete: { type: LogSchema, default: () => ({}) },
-    channelCreate: { type: LogSchema, default: () => ({}) },
-    channelUpdate: { type: LogSchema, default: () => ({}) },
-    channelDelete: { type: LogSchema, default: () => ({}) },
-    emojiCreate: { type: LogSchema, default: () => ({}) },
-    emojiDelete: { type: LogSchema, default: () => ({}) },
-  }
+    messageDelete: { type: logSchema, default: () => ({}) },
+    messageUpdate: { type: logSchema, default: () => ({}) },
+    memberAdd: { type: logSchema, default: () => ({}) },
+    memberRemove: { type: logSchema, default: () => ({}) },
+    roleCreate: { type: logSchema, default: () => ({}) },
+    roleUpdate: { type: logSchema, default: () => ({}) },
+    roleDelete: { type: logSchema, default: () => ({}) },
+    channelCreate: { type: logSchema, default: () => ({}) },
+    channelUpdate: { type: logSchema, default: () => ({}) },
+    channelDelete: { type: logSchema, default: () => ({}) },
+    emojiCreate: { type: logSchema, default: () => ({}) },
+    emojiDelete: { type: logSchema, default: () => ({}) },
+    banAdd: { type: logSchema, default: () => ({}) },
+    banRemove: { type: logSchema, default: () => ({}) },
+  },
 });
 
-module.exports = mongoose.model("GuildConfig", GuildConfigSchema);
+module.exports = mongoose.model("GuildConfig", guildConfigSchema);
