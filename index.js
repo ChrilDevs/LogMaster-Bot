@@ -1,17 +1,15 @@
 require("dotenv").config();
-const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js");
-const fs = require("fs");
+const { Client, GatewayIntentBits, Collection, ActivityType } = require("discord.js");
 const mongoose = require("mongoose");
+const fs = require("fs");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildBans,
     GatewayIntentBits.MessageContent
-  ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+  ]
 });
 
 client.commands = new Collection();
@@ -19,8 +17,16 @@ client.commands = new Collection();
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
-  client.commands.set(command.name, command);
+  client.commands.set(command.data.name, command);
 }
+
+client.on("ready", () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+  client.user.setPresence({
+    activities: [{ name: "your server logs", type: ActivityType.Watching }],
+    status: "online"
+  });
+});
 
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
@@ -29,32 +35,25 @@ client.on("interactionCreate", async interaction => {
   if (!command) return;
 
   try {
-    await command.run(client, interaction);
-  } catch (err) {
-    console.error(`❌ Error executing command ${interaction.commandName}:`, err);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: "❌ Errore durante l'esecuzione del comando.", flags: 64 });
+    await command.execute(interaction, client);
+  } catch (error) {
+    console.error(`❌ Error executing command ${interaction.commandName}:`, error);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp({ content: "❌ Error executing command.", ephemeral: true });
     } else {
-      await interaction.editReply({ content: "❌ Errore durante l'esecuzione del comando." });
+      await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
     }
   }
 });
 
-require("./handlers/loggers")(client);
-
-
-client.once("ready", () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
-  client.user.setPresence({
-    activities: [{ name: "monitoring logs", type: 0 }],
-    status: "online"
-  });
-
-
-});
-
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("✅ Connected to MongoDB"))
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log("✅ MongoDB connected"))
   .catch(err => console.error("❌ MongoDB connection error:", err));
+
+require("./events/loggers")(client);
+
 
 client.login(process.env.TOKEN);
