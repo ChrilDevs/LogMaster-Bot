@@ -4,12 +4,10 @@ const GuildConfig = require("../models/GuildConfig");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setlog")
-    .setDescription("Set a log channel for a specific log type")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setDescription("Set a channel for specific logs")
     .addStringOption(option =>
-      option
-        .setName("logtype")
-        .setDescription("Select the type of log to configure")
+      option.setName("type")
+        .setDescription("Choose the log type")
         .setRequired(true)
         .addChoices(
           { name: "Message Deleted", value: "messageDelete" },
@@ -24,43 +22,36 @@ module.exports = {
           { name: "Channel Deleted", value: "channelDelete" },
           { name: "Emoji Created", value: "emojiCreate" },
           { name: "Emoji Deleted", value: "emojiDelete" },
-          { name: "Ban Added", value: "guildBanAdd" },
-          { name: "Ban Removed", value: "guildBanRemove" }
-        )
-    )
+          { name: "Member Banned", value: "guildBanAdd" },
+          { name: "Member Unbanned", value: "guildBanRemove" }
+        ))
     .addChannelOption(option =>
-      option
-        .setName("channel")
-        .setDescription("The channel where logs will be sent")
-        .setRequired(true)
-    ),
+      option.setName("channel")
+        .setDescription("Channel to send logs")
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
-    const logType = interaction.options.getString("logtype");
+    const logType = interaction.options.getString("type");
     const channel = interaction.options.getChannel("channel");
 
-    try {
+    let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
+    if (!config) {
+      config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
+    }
 
-      let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-      if (!config) {
-        config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
-      }
+    if (!config.logs) config.logs = {};
+    if (!config.logs[logType]) config.logs[logType] = {};
 
-      if (!config.logs) config.logs = {};
+    config.logs[logType].enabled = true;
+    config.logs[logType].channelId = channel.id;
 
-      config.logs[logType] = { channelId: channel.id, enabled: true };
-      await config.save();
+    await config.save();
 
-      await interaction.reply({
-        content: `✅ Log for **${logType}** set to <#${channel.id}>`,
-        ephemeral: true
-      });
-    } catch (err) {
-      console.error("❌ Error in /setlog:", err);
-      await interaction.reply({
-        content: "❌ Error while saving log configuration.",
-        ephemeral: true
-      });
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: `✅ Logs for **${logType}** will be sent in ${channel}`, ephemeral: true });
+    } else {
+      await interaction.followUp({ content: `✅ Logs for **${logType}** will be sent in ${channel}`, ephemeral: true });
     }
   }
 };

@@ -8,17 +8,23 @@ module.exports = {
   async execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor("Blue")
-      .setTitle("📖 Logger Bot Commands")
-      .setDescription("Here are all available commands:")
+      .setTitle("LogMaster Bot Commands")
+      .setDescription("Here are the commands you can use:")
       .addFields(
-        { name: "/setlog", value: "Set a specific log type to a channel", inline: false },
-        { name: "/togglelog", value: "Enable or disable a specific log type", inline: false },
-        { name: "/listlogs", value: "Show all configured logs and their status", inline: false },
-        { name: "/setalllogs", value: "Set all log types to a single channel quickly", inline: false },
-        { name: "/help", value: "Show this help message", inline: false }
+        { name: "/setlog", value: "Set a channel for specific logs (Admin only)" },
+        { name: "/togglelog", value: "Enable or disable a specific log type" },
+        { name: "/listlogs", value: "List all configured logs for this server" },
+        { name: "/help", value: "Show this help message" },
+        { name: "Tip", value: "You can set all logs to one channel using `/setlog type:all channel:#channel`" }
       )
-      .setTimestamp();
+      .setTimestamp()
+      .setFooter({ text: "LogMaster v1" });
 
-    await interaction.reply({ embeds: [embed] }); 
+    // Non ephemeral, visibile a tutti
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ embeds: [embed] });
+    } else {
+      await interaction.followUp({ embeds: [embed] });
+    }
   }
 };
