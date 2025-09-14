@@ -1,21 +1,27 @@
 const mongoose = require("mongoose");
 
+const LogSchema = new mongoose.Schema({
+  enabled: { type: Boolean, default: false },
+  channelId: { type: String, default: null }
+});
+
 const GuildConfigSchema = new mongoose.Schema({
-  guildId: { type: String, required: true },
+  guildId: { type: String, required: true, unique: true },
   logs: {
-    messageDelete: { enabled: Boolean, channelId: String },
-    messageUpdate: { enabled: Boolean, channelId: String },
-    memberJoin: { enabled: Boolean, channelId: String },
-    roleCreate: { enabled: Boolean, channelId: String },
-    roleUpdate: { enabled: Boolean, channelId: String },
-    roleDelete: { enabled: Boolean, channelId: String },
-    channelCreate: { enabled: Boolean, channelId: String },
-    channelUpdate: { enabled: Boolean, channelId: String },
-    channelDelete: { enabled: Boolean, channelId: String },
-    emojiCreate: { enabled: Boolean, channelId: String },
-    emojiDelete: { enabled: Boolean, channelId: String },
-    ban: { enabled: Boolean, channelId: String },
-    unban: { enabled: Boolean, channelId: String }
+    messageDelete: { type: LogSchema, default: () => ({}) },
+    messageUpdate: { type: LogSchema, default: () => ({}) },
+    memberAdd: { type: LogSchema, default: () => ({}) },
+    memberRemove: { type: LogSchema, default: () => ({}) },
+    banAdd: { type: LogSchema, default: () => ({}) },
+    banRemove: { type: LogSchema, default: () => ({}) },
+    roleCreate: { type: LogSchema, default: () => ({}) },
+    roleUpdate: { type: LogSchema, default: () => ({}) },
+    roleDelete: { type: LogSchema, default: () => ({}) },
+    channelCreate: { type: LogSchema, default: () => ({}) },
+    channelUpdate: { type: LogSchema, default: () => ({}) },
+    channelDelete: { type: LogSchema, default: () => ({}) },
+    emojiCreate: { type: LogSchema, default: () => ({}) },
+    emojiDelete: { type: LogSchema, default: () => ({}) },
   }
 });
 

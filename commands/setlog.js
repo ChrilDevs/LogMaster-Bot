@@ -1,40 +1,36 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setlog")
-    .setDescription("Set a channel for specific logs")
+    .setDescription("Set a log type in a specific channel")
     .addStringOption(option =>
       option.setName("type")
-        .setDescription("Choose the log type")
+        .setDescription("Type of log")
         .setRequired(true)
         .addChoices(
-          { name: "Message Deleted", value: "messageDelete" },
-          { name: "Message Edited", value: "messageUpdate" },
-          { name: "Member Joined", value: "guildMemberAdd" },
-          { name: "Member Left", value: "guildMemberRemove" },
-          { name: "Role Created", value: "roleCreate" },
-          { name: "Role Updated", value: "roleUpdate" },
-          { name: "Role Deleted", value: "roleDelete" },
-          { name: "Channel Created", value: "channelCreate" },
-          { name: "Channel Updated", value: "channelUpdate" },
-          { name: "Channel Deleted", value: "channelDelete" },
-          { name: "Emoji Created", value: "emojiCreate" },
-          { name: "Emoji Deleted", value: "emojiDelete" },
-          { name: "Member Banned", value: "guildBanAdd" },
-          { name: "Member Unbanned", value: "guildBanRemove" }
+          { name: "Message Delete", value: "messageDelete" },
+          { name: "Message Update", value: "messageUpdate" },
+          { name: "Member Join", value: "memberAdd" },
+          { name: "Member Leave", value: "memberRemove" },
+          { name: "Role Create", value: "roleCreate" },
+          { name: "Role Update", value: "roleUpdate" },
+          { name: "Role Delete", value: "roleDelete" },
+          { name: "Channel Create", value: "channelCreate" },
+          { name: "Channel Update", value: "channelUpdate" },
+          { name: "Channel Delete", value: "channelDelete" },
+          { name: "Emoji Create", value: "emojiCreate" },
+          { name: "Emoji Delete", value: "emojiDelete" },
+          { name: "Member Ban", value: "banAdd" },
+          { name: "Member Unban", value: "banRemove" }
         ))
     .addChannelOption(option =>
       option.setName("channel")
-        .setDescription("Channel to send logs")
-        .setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
+        .setDescription("Channel to send logs to")
+        .setRequired(true)),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
-
-    const logType = interaction.options.getString("type");
+    const type = interaction.options.getString("type");
     const channel = interaction.options.getChannel("channel");
 
     let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
@@ -42,13 +38,9 @@ module.exports = {
       config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
     }
 
-    if (!config.logs) config.logs = {};
-    if (!config.logs[logType]) config.logs[logType] = {};
-
-    config.logs[logType].enabled = true;
-    config.logs[logType].channelId = channel.id;
-
+    config.logs[type] = { enabled: true, channelId: channel.id };
     await config.save();
-    await interaction.editReply({ content: `✅ Logs for **${logType}** will be sent in ${channel}` });
+
+    await interaction.reply({ content: `✅ Logs for ${type} will be sent in ${channel}`, flags: 64 });
   }
 };

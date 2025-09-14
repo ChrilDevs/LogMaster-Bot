@@ -25,13 +25,12 @@ mongoose.connect(process.env.MONGO_URI)
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
-
 for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));
   client.commands.set(command.data.name, command);
 }
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
   client.user.setActivity("LogMaster v1", { type: "PLAYING" });
 
@@ -45,6 +44,7 @@ client.once("ready", async () => {
 
 client.on("interactionCreate", async interaction => {
   if (!interaction.isCommand()) return;
+
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
 
@@ -52,13 +52,8 @@ client.on("interactionCreate", async interaction => {
     await command.execute(interaction);
   } catch (err) {
     console.error(err);
-    try {
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: "❌ Error executing command.", flags: 64 });
-      } else {
-        await interaction.editReply({ content: "❌ Error executing command." });
-      }
-    } catch {}
+    if (!interaction.replied) await interaction.reply({ content: "❌ Error executing command.", flags: 64 });
+    else await interaction.followUp({ content: "❌ Error executing command.", flags: 64 });
   }
 });
 
