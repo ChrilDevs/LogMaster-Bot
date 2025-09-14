@@ -1,20 +1,38 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("listlogs")
-    .setDescription("Show the current log settings"),
+  name: "listlogs",
+  description: "Mostra tutti i log configurati nel server",
+  run: async (client, interaction) => {
+    try {
+      await interaction.deferReply({ flags: 64 }); // ephemeral = flags: 64
 
-  async execute(interaction) {
-    const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) return interaction.reply({ content: "No logs configured yet.", ephemeral: true });
+      const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
+      if (!config || !config.logs) {
+        return interaction.editReply("⚠️ Nessuna configurazione trovata.");
+      }
 
-    let msg = `📑 Log Settings for ${interaction.guild.name}\n`;
-    for (const [type, data] of Object.entries(config.logs)) {
-      msg += `📌 ${type}\n${data.enabled ? "✅ Enabled" : "❌ Disabled"}\n${data.channelId ? `📺 Channel: <#${data.channelId}>\n` : ""}`;
+      const embed = new EmbedBuilder()
+        .setTitle(`📑 Log Settings for ${interaction.guild.name}`)
+        .setColor("Blue");
+
+      for (const [logType, logConfig] of Object.entries(config.logs)) {
+        embed.addFields({
+          name: `📌 ${logType}`,
+          value: logConfig.enabled
+            ? `✅ Enabled\n📺 Channel: <#${logConfig.channelId}>`
+            : "❌ Disabled",
+          inline: false
+        });
+      }
+
+      await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+      console.error("Error in /listlogs:", err);
+      if (!interaction.replied) {
+        await interaction.reply({ content: "❌ Errore durante l'esecuzione del comando.", flags: 64 });
+      }
     }
-
-    await interaction.reply({ content: msg, ephemeral: true });
   }
 };

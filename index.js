@@ -1,60 +1,60 @@
 require("dotenv").config();
-const { Client, Collection, GatewayIntentBits } = require("discord.js");
+const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js");
 const fs = require("fs");
-const path = require("path");
 const mongoose = require("mongoose");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.GuildBans
-  ]
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildBans,
+    GatewayIntentBits.MessageContent
+  ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
 client.commands = new Collection();
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
 
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 for (const file of commandFiles) {
-  const command = require(path.join(commandsPath, file));
-  client.commands.set(command.data.name, command);
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.name, command);
 }
-
-require("./events/loggers")(client);
-
-mongoose.connect(process.env.MONGO_URI, { dbName: "logmaster" })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(console.error);
-
-client.once("clientReady", async () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
-  client.user.setActivity("LogMaster v1", { type: "PLAYING" });
-
-  try {
-    await client.application.commands.set(client.commands.map(cmd => cmd.data));
-    console.log("✅ Global commands registered");
-  } catch (err) {
-    console.error("❌ Failed to register commands:", err);
-  }
-});
 
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
+
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
 
   try {
-    await command.execute(interaction, client);
+    await command.run(client, interaction);
   } catch (err) {
     console.error(`❌ Error executing command ${interaction.commandName}:`, err);
-    if (!interaction.replied) {
-      await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: "❌ Errore durante l'esecuzione del comando.", flags: 64 });
+    } else {
+      await interaction.editReply({ content: "❌ Errore durante l'esecuzione del comando." });
     }
   }
 });
+
+require("./handlers/loggers")(client);
+
+
+client.once("ready", () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+  client.user.setPresence({
+    activities: [{ name: "monitoring logs", type: 0 }],
+    status: "online"
+  });
+
+
+});
+
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
 client.login(process.env.TOKEN);

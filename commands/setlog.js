@@ -1,21 +1,43 @@
-const { SlashCommandBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("setlog")
-    .setDescription("Set a specific log in a channel")
-    .addStringOption(opt => opt.setName("type").setDescription("Log type").setRequired(true))
-    .addChannelOption(opt => opt.setName("channel").setDescription("Channel for logs").setRequired(true)),
+  name: "setlog",
+  description: "Imposta un singolo log",
+  options: [
+    {
+      name: "event",
+      type: 3,
+      description: "Evento da loggare (es. messageDelete, memberAdd, banAdd)",
+      required: true
+    },
+    {
+      name: "channel",
+      type: 7,
+      description: "Canale dove inviare i log",
+      required: true
+    }
+  ],
+  run: async (client, interaction) => {
+    try {
+      await interaction.deferReply({ flags: 64 });
 
-  async execute(interaction) {
-    const type = interaction.options.getString("type");
-    const channel = interaction.options.getChannel("channel");
+      const event = interaction.options.getString("event");
+      const channel = interaction.options.getChannel("channel");
 
-    const config = await GuildConfig.findOne({ guildId: interaction.guild.id }) || new GuildConfig({ guildId: interaction.guild.id, logs: {} });
-    config.logs[type] = { enabled: true, channelId: channel.id };
-    await config.save();
+      let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
+      if (!config) {
+        config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
+      }
 
-    await interaction.reply({ content: `✅ Logs for ${type} will be sent in ${channel}`, ephemeral: true });
+      config.logs[event] = { enabled: true, channelId: channel.id };
+      await config.save();
+
+      await interaction.editReply(`✅ Logs for **${event}** will be sent in ${channel}`);
+    } catch (err) {
+      console.error("Error in /setlog:", err);
+      if (!interaction.replied) {
+        await interaction.reply({ content: "❌ Errore durante l'esecuzione del comando.", flags: 64 });
+      }
+    }
   }
 };

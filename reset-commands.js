@@ -1,15 +1,17 @@
+const mongoose = require("mongoose");
+const GuildConfig = require("./models/GuildConfig");
 require("dotenv").config();
-const { Client, GatewayIntentBits } = require("discord.js");
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+(async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
 
-client.once("ready", async () => {
-  console.log(`Logged in as ${client.user.tag}`);
+    const res = await GuildConfig.deleteMany({});
+    console.log(`✅ Cancellati ${res.deletedCount} documenti`);
 
-  await client.application.commands.set([]);
-  console.log("✅ Tutti i comandi globali cancellati!");
-
-  process.exit(0);
-});
-
-client.login(process.env.TOKEN);
+    mongoose.connection.close();
+  } catch (err) {
+    console.error(err);
+    mongoose.connection.close();
+  }
+})();

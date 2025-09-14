@@ -1,7 +1,6 @@
-const { SlashCommandBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
-const logTypes = [
+const ALL_EVENTS = [
   "messageDelete",
   "messageUpdate",
   "memberAdd",
@@ -19,20 +18,38 @@ const logTypes = [
 ];
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("setalllogs")
-    .setDescription("Enable all logs in a specific channel")
-    .addChannelOption(opt => opt.setName("channel").setDescription("Channel for all logs").setRequired(true)),
-
-  async execute(interaction) {
-    const channel = interaction.options.getChannel("channel");
-    const config = await GuildConfig.findOne({ guildId: interaction.guild.id }) || new GuildConfig({ guildId: interaction.guild.id, logs: {} });
-
-    for (const type of logTypes) {
-      config.logs[type] = { enabled: true, channelId: channel.id };
+  name: "setalllogs",
+  description: "Abilita tutti i log in un canale",
+  options: [
+    {
+      name: "channel",
+      type: 7,
+      description: "Canale dove inviare i log",
+      required: true
     }
+  ],
+  run: async (client, interaction) => {
+    try {
+      await interaction.deferReply({ flags: 64 });
 
-    await config.save();
-    await interaction.reply({ content: `✅ All logs have been enabled in ${channel}`, ephemeral: true });
+      const channel = interaction.options.getChannel("channel");
+
+      let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
+      if (!config) {
+        config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
+      }
+
+      for (const event of ALL_EVENTS) {
+        config.logs[event] = { enabled: true, channelId: channel.id };
+      }
+
+      await config.save();
+      await interaction.editReply(`✅ Tutti i log sono stati abilitati in ${channel}`);
+    } catch (err) {
+      console.error("Error in /setalllogs:", err);
+      if (!interaction.replied) {
+        await interaction.reply({ content: "❌ Errore durante l'esecuzione del comando.", flags: 64 });
+      }
+    }
   }
 };
