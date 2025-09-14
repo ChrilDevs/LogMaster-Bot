@@ -2,16 +2,18 @@ const mongoose = require("mongoose");
 
 const logSchema = new mongoose.Schema({
   enabled: { type: Boolean, default: false },
-  channelId: { type: String, default: null },
+  channelId: { type: String, default: null }
 });
 
 const guildConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
   logs: {
-    messageDelete: { type: logSchema, default: () => ({}) },
-    messageUpdate: { type: logSchema, default: () => ({}) },
     memberAdd: { type: logSchema, default: () => ({}) },
     memberRemove: { type: logSchema, default: () => ({}) },
+    banAdd: { type: logSchema, default: () => ({}) },
+    banRemove: { type: logSchema, default: () => ({}) },
+    messageDelete: { type: logSchema, default: () => ({}) },
+    messageUpdate: { type: logSchema, default: () => ({}) },
     roleCreate: { type: logSchema, default: () => ({}) },
     roleUpdate: { type: logSchema, default: () => ({}) },
     roleDelete: { type: logSchema, default: () => ({}) },
@@ -20,9 +22,7 @@ const guildConfigSchema = new mongoose.Schema({
     channelDelete: { type: logSchema, default: () => ({}) },
     emojiCreate: { type: logSchema, default: () => ({}) },
     emojiDelete: { type: logSchema, default: () => ({}) },
-    banAdd: { type: logSchema, default: () => ({}) },
-    banRemove: { type: logSchema, default: () => ({}) },
-  },
+  }
 });
 
 module.exports = mongoose.model("GuildConfig", guildConfigSchema);

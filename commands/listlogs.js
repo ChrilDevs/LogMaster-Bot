@@ -1,38 +1,27 @@
-const { EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
 module.exports = {
-  name: "listlogs",
-  description: "Mostra tutti i log configurati nel server",
-  run: async (client, interaction) => {
-    try {
-      await interaction.deferReply({ flags: 64 }); // ephemeral = flags: 64
+  data: new SlashCommandBuilder()
+    .setName("listlogs")
+    .setDescription("Mostra tutti i log abilitati per il server"),
 
-      const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-      if (!config || !config.logs) {
-        return interaction.editReply("⚠️ Nessuna configurazione trovata.");
-      }
+  async execute(interaction) {
+    const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
+    if (!config || !config.logs) return interaction.reply({ content: "❌ Nessuna configurazione log trovata.", ephemeral: true });
 
-      const embed = new EmbedBuilder()
-        .setTitle(`📑 Log Settings for ${interaction.guild.name}`)
-        .setColor("Blue");
+    const embed = new EmbedBuilder()
+      .setTitle(`📑 Log Settings per ${interaction.guild.name}`)
+      .setColor("Blue");
 
-      for (const [logType, logConfig] of Object.entries(config.logs)) {
-        embed.addFields({
-          name: `📌 ${logType}`,
-          value: logConfig.enabled
-            ? `✅ Enabled\n📺 Channel: <#${logConfig.channelId}>`
-            : "❌ Disabled",
-          inline: false
-        });
-      }
-
-      await interaction.editReply({ embeds: [embed] });
-    } catch (err) {
-      console.error("Error in /listlogs:", err);
-      if (!interaction.replied) {
-        await interaction.reply({ content: "❌ Errore durante l'esecuzione del comando.", flags: 64 });
-      }
+    for (const [key, value] of Object.entries(config.logs)) {
+      embed.addFields({
+        name: key,
+        value: `${value.enabled ? "✅ Enabled" : "❌ Disabled"}${value.channelId ? `\n📺 <#${value.channelId}>` : ""}`,
+        inline: false
+      });
     }
-  }
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  },
 };

@@ -1,55 +1,26 @@
+const { SlashCommandBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
-const ALL_EVENTS = [
-  "messageDelete",
-  "messageUpdate",
-  "memberAdd",
-  "memberRemove",
-  "roleCreate",
-  "roleUpdate",
-  "roleDelete",
-  "channelCreate",
-  "channelUpdate",
-  "channelDelete",
-  "emojiCreate",
-  "emojiDelete",
-  "banAdd",
-  "banRemove"
-];
+const logTypes = ["memberAdd", "memberRemove", "banAdd", "banRemove", "messageDelete", "messageUpdate"];
 
 module.exports = {
-  name: "setalllogs",
-  description: "Abilita tutti i log in un canale",
-  options: [
-    {
-      name: "channel",
-      type: 7,
-      description: "Canale dove inviare i log",
-      required: true
+  data: new SlashCommandBuilder()
+    .setName("setalllogs")
+    .setDescription("Abilita tutti i log e imposta lo stesso canale")
+    .addChannelOption(option =>
+      option.setName("channel")
+        .setDescription("Canale dove inviare tutti i log")
+        .setRequired(true)),
+
+  async execute(interaction) {
+    let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
+    if (!config) config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
+
+    for (const type of logTypes) {
+      config.logs[type] = { enabled: true, channelId: interaction.options.getChannel("channel").id };
     }
-  ],
-  run: async (client, interaction) => {
-    try {
-      await interaction.deferReply({ flags: 64 });
 
-      const channel = interaction.options.getChannel("channel");
-
-      let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-      if (!config) {
-        config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
-      }
-
-      for (const event of ALL_EVENTS) {
-        config.logs[event] = { enabled: true, channelId: channel.id };
-      }
-
-      await config.save();
-      await interaction.editReply(`✅ Tutti i log sono stati abilitati in ${channel}`);
-    } catch (err) {
-      console.error("Error in /setalllogs:", err);
-      if (!interaction.replied) {
-        await interaction.reply({ content: "❌ Errore durante l'esecuzione del comando.", flags: 64 });
-      }
-    }
-  }
+    await config.save();
+    await interaction.reply({ content: `✅ Tutti i log abilitati in <#${interaction.options.getChannel("channel").id}>`, ephemeral: true });
+  },
 };
