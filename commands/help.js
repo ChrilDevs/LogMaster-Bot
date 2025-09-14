@@ -15,7 +15,7 @@ module.exports = {
         { name: "/togglelog", value: "Enable or disable a specific log type" },
         { name: "/listlogs", value: "List all configured logs for this server" },
         { name: "/help", value: "Show this help message" },
-        { name: "Tip", value: "You can set all logs to one channel using `/setlog type:all channel:#channel`" }
+        { name: "Tip", value: "You can set all logs to one channel using `/setalllogs` " }
       )
       .setTimestamp()
       .setFooter({ text: "LogMaster v1" });
