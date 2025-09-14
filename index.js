@@ -15,7 +15,6 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-
 const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
@@ -34,8 +33,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(err => console.error(err));
 
-client.once("clientReady", () => {
+client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+  client.user.setActivity('your server logs', { type: 'WATCHING' });
 });
 
 client.on("interactionCreate", async interaction => {
@@ -46,7 +46,7 @@ client.on("interactionCreate", async interaction => {
     await command.execute(interaction);
   } catch (err) {
     console.error(err);
-    if (!interaction.replied) {
+    if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
     }
   }
