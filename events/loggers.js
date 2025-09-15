@@ -18,7 +18,6 @@ async function sendLog(guild, type, embed) {
 
 module.exports = client => {
   client.on("guildMemberAdd", async member => {
-    if (!member.user) return;
     const embed = new EmbedBuilder()
       .setColor("Green")
       .setTitle("✅ Member Joined")
@@ -28,23 +27,25 @@ module.exports = client => {
         { name: "Account Created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>` }
       )
       .setTimestamp();
+
     await sendLog(member.guild, "memberAdd", embed);
   });
 
   client.on("guildMemberRemove", async member => {
-    if (!member.user) return;
     const embed = new EmbedBuilder()
       .setColor("Red")
       .setTitle("❌ Member Left")
       .setThumbnail(member.user.displayAvatarURL())
       .addFields({ name: "User", value: `${member.user.tag} (${member.id})` })
       .setTimestamp();
+
     await sendLog(member.guild, "memberRemove", embed);
   });
 
   client.on("guildBanAdd", async ban => {
     const logs = await ban.guild.fetchAuditLogs({ type: AuditLogEvent.MemberBanAdd, limit: 1 });
     const entry = logs.entries.first();
+
     const embed = new EmbedBuilder()
       .setColor("Red")
       .setTitle("⛔ Member Banned")
@@ -55,12 +56,14 @@ module.exports = client => {
         { name: "Reason", value: entry?.reason || "No reason provided" }
       )
       .setTimestamp();
+
     await sendLog(ban.guild, "banAdd", embed);
   });
 
   client.on("guildBanRemove", async ban => {
     const logs = await ban.guild.fetchAuditLogs({ type: AuditLogEvent.MemberBanRemove, limit: 1 });
     const entry = logs.entries.first();
+
     const embed = new EmbedBuilder()
       .setColor("Green")
       .setTitle("✅ Member Unbanned")
@@ -70,6 +73,41 @@ module.exports = client => {
         { name: "Unbanned By", value: entry?.executor ? `${entry.executor.tag} (${entry.executor.id})` : "Unknown" }
       )
       .setTimestamp();
+
     await sendLog(ban.guild, "banRemove", embed);
+  });
+
+  client.on("messageDelete", async message => {
+    if (!message.guild || message.partial) return;
+
+    const embed = new EmbedBuilder()
+      .setColor("Orange")
+      .setTitle("🗑️ Message Deleted")
+      .addFields(
+        { name: "Author", value: `${message.author.tag} (${message.author.id})` },
+        { name: "Channel", value: `${message.channel}` },
+        { name: "Content", value: message.content || "*No content*" }
+      )
+      .setTimestamp();
+
+    await sendLog(message.guild, "messageDelete", embed);
+  });
+
+  client.on("messageUpdate", async (oldMessage, newMessage) => {
+    if (!newMessage.guild || oldMessage.partial || newMessage.partial) return;
+    if (oldMessage.content === newMessage.content) return;
+
+    const embed = new EmbedBuilder()
+      .setColor("Blue")
+      .setTitle("✏️ Message Edited")
+      .addFields(
+        { name: "Author", value: `${newMessage.author.tag} (${newMessage.author.id})` },
+        { name: "Channel", value: `${newMessage.channel}` },
+        { name: "Before", value: oldMessage.content || "*No content*" },
+        { name: "After", value: newMessage.content || "*No content*" }
+      )
+      .setTimestamp();
+
+    await sendLog(newMessage.guild, "messageUpdate", embed);
   });
 };

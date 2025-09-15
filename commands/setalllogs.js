@@ -4,39 +4,35 @@ const GuildConfig = require("../models/GuildConfig");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setalllogs")
-    .setDescription("Imposta un unico canale per TUTTI i log")
-    .addChannelOption(opt =>
-      opt.setName("channel")
-        .setDescription("Il canale per inviare tutti i log")
+    .setDescription("Imposta tutti i log in un unico canale")
+    .addChannelOption(option =>
+      option.setName("channel")
+        .setDescription("Il canale in cui inviare tutti i log")
         .setRequired(true)
     ),
-
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
 
     const logTypes = [
-      "messageDelete",
-      "messageUpdate",
+      "memberAdd",
+      "memberRemove",
       "banAdd",
       "banRemove",
-      "memberAdd",
-      "memberRemove"
+      "messageDelete",
+      "messageUpdate"
     ];
 
-    const updates = {};
+    const logsConfig = {};
     for (const type of logTypes) {
-      updates[`logs.${type}`] = { channelId: channel.id, enabled: true };
+      logsConfig[type] = { enabled: true, channelId: channel.id };
     }
 
     await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guild.id },
-      { $set: updates },
-      { upsert: true, new: true }
+      { $set: { logs: logsConfig } },
+      { upsert: true }
     );
 
-    await interaction.reply({
-      content: `✅ Tutti i log sono stati impostati su ${channel}`,
-      flags: 64
-    });
+    await interaction.reply(`✅ Tutti i log sono stati impostati su ${channel}`);
   }
 };
