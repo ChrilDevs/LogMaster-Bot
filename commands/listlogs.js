@@ -10,9 +10,8 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle(`📑 Log Settings for ${interaction.guild.name}`)
       .setColor("Blue");
-    if (!config || !config.logs) {
-      embed.setDescription("No logs configured");
-    } else {
+    if (!config?.logs) embed.setDescription("No logs configured");
+    else {
       for (const [key, value] of Object.entries(config.logs)) {
         embed.addFields({ name: key, value: `${value.enabled ? "✅ Enabled" : "❌ Disabled"}\nChannel: ${value.channelId ? `<#${value.channelId}>` : "None"}`, inline: false });
       }

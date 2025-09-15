@@ -20,16 +20,12 @@ fs.readdirSync("./commands")
   .filter(f => f.endsWith(".js"))
   .forEach(file => {
     const command = require(`./commands/${file}`);
-    if (command?.data?.name && command.execute) {
-      client.commands.set(command.data.name, command);
-    }
+    if (command?.data?.name && command.execute) client.commands.set(command.data.name, command);
   });
 
 fs.readdirSync("./events")
   .filter(f => f.endsWith(".js"))
-  .forEach(file => {
-    require(`./events/${file}`)(client);
-  });
+  .forEach(file => require(`./events/${file}`)(client));
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
