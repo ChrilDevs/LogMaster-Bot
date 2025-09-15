@@ -1,6 +1,6 @@
 require("dotenv").config();
 const fs = require("fs");
-const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js");
+const { Client, Collection, GatewayIntentBits, Partials, ActivityType } = require("discord.js");
 const mongoose = require("mongoose");
 
 const client = new Client({
@@ -21,6 +21,8 @@ for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   if (command && command.data && command.execute) {
     client.commands.set(command.data.name, command);
+  } else {
+    console.warn(`⚠️ Il file ${file} non esporta un comando valido e sarà ignorato.`);
   }
 }
 
@@ -32,9 +34,12 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(err => console.error(err));
 
-client.once("clientReady", () => {
+client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
-  client.user.setActivity("your server logs", { type: "WATCHING" });
+  client.user.setPresence({
+    activities: [{ name: "your server logs", type: ActivityType.Watching }],
+    status: "online"
+  });
 });
 
 client.on("interactionCreate", async interaction => {
@@ -45,7 +50,7 @@ client.on("interactionCreate", async interaction => {
     await command.execute(interaction);
   } catch (err) {
     console.error(err);
-    if (!interaction.replied && !interaction.deferred) {
+    if (!interaction.replied) {
       await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
     }
   }
