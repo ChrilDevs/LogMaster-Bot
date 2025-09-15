@@ -4,20 +4,39 @@ const GuildConfig = require("../models/GuildConfig");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setlog")
-    .setDescription("Set a specific log type to a channel")
-    .addStringOption(opt => opt.setName("type").setDescription("Log type").setRequired(true))
-    .addChannelOption(opt => opt.setName("channel").setDescription("Channel to send logs").setRequired(true)),
+    .setDescription("Imposta un canale per un tipo di log")
+    .addStringOption(opt =>
+      opt.setName("type")
+        .setDescription("Il tipo di log da impostare")
+        .setRequired(true)
+        .addChoices(
+          { name: "Messaggi Eliminati", value: "messageDelete" },
+          { name: "Messaggi Modificati", value: "messageUpdate" },
+          { name: "Utenti Bannati", value: "banAdd" },
+          { name: "Utenti Sbannati", value: "banRemove" },
+          { name: "Utenti Entrati", value: "memberAdd" },
+          { name: "Utenti Usciti", value: "memberRemove" }
+        )
+    )
+    .addChannelOption(opt =>
+      opt.setName("channel")
+        .setDescription("Il canale per inviare i log")
+        .setRequired(true)
+    ),
 
   async execute(interaction) {
     const type = interaction.options.getString("type");
     const channel = interaction.options.getChannel("channel");
 
-    let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) config = await GuildConfig.create({ guildId: interaction.guild.id, logs: {} });
+    await GuildConfig.findOneAndUpdate(
+      { guildId: interaction.guild.id },
+      { $set: { [`logs.${type}`]: { channelId: channel.id, enabled: true } } },
+      { upsert: true, new: true }
+    );
 
-    config.logs[type] = { enabled: true, channelId: channel.id };
-    await config.save();
-
-    await interaction.reply({ content: `✅ Logs for ${type} will be sent in ${channel}`, ephemeral: true });
+    await interaction.reply({
+      content: `✅ Log **${type}** impostato su ${channel}`,
+      flags: 64
+    });
   }
 };

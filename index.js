@@ -1,6 +1,6 @@
 require("dotenv").config();
 const fs = require("fs");
-const { Client, Collection, GatewayIntentBits, Partials, ActivityType } = require("discord.js");
+const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js");
 const mongoose = require("mongoose");
 
 const client = new Client({
@@ -37,8 +37,8 @@ mongoose.connect(process.env.MONGO_URI)
 client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
   client.user.setPresence({
-    activities: [{ name: "your server logs", type: ActivityType.Watching }],
-    status: "online"
+    activities: [{ name: "your server logs", type: 3 }], // Watching
+    status: "online",
   });
 });
 
@@ -51,7 +51,7 @@ client.on("interactionCreate", async interaction => {
   } catch (err) {
     console.error(err);
     if (!interaction.replied) {
-      await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
+      await interaction.reply({ content: "❌ Error executing command.", flags: 64 });
     }
   }
 });

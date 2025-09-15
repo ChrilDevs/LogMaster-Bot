@@ -17,12 +17,8 @@ async function sendLog(guild, type, embed) {
 }
 
 module.exports = client => {
-  client.removeAllListeners("guildMemberAdd");
-  client.removeAllListeners("guildMemberRemove");
-  client.removeAllListeners("guildBanAdd");
-  client.removeAllListeners("guildBanRemove");
-
   client.on("guildMemberAdd", async member => {
+    if (!member.user) return;
     const embed = new EmbedBuilder()
       .setColor("Green")
       .setTitle("✅ Member Joined")
@@ -32,25 +28,23 @@ module.exports = client => {
         { name: "Account Created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>` }
       )
       .setTimestamp();
-
     await sendLog(member.guild, "memberAdd", embed);
   });
 
   client.on("guildMemberRemove", async member => {
+    if (!member.user) return;
     const embed = new EmbedBuilder()
       .setColor("Red")
       .setTitle("❌ Member Left")
       .setThumbnail(member.user.displayAvatarURL())
       .addFields({ name: "User", value: `${member.user.tag} (${member.id})` })
       .setTimestamp();
-
     await sendLog(member.guild, "memberRemove", embed);
   });
 
   client.on("guildBanAdd", async ban => {
     const logs = await ban.guild.fetchAuditLogs({ type: AuditLogEvent.MemberBanAdd, limit: 1 });
     const entry = logs.entries.first();
-
     const embed = new EmbedBuilder()
       .setColor("Red")
       .setTitle("⛔ Member Banned")
@@ -61,14 +55,12 @@ module.exports = client => {
         { name: "Reason", value: entry?.reason || "No reason provided" }
       )
       .setTimestamp();
-
     await sendLog(ban.guild, "banAdd", embed);
   });
 
   client.on("guildBanRemove", async ban => {
     const logs = await ban.guild.fetchAuditLogs({ type: AuditLogEvent.MemberBanRemove, limit: 1 });
     const entry = logs.entries.first();
-
     const embed = new EmbedBuilder()
       .setColor("Green")
       .setTitle("✅ Member Unbanned")
@@ -78,7 +70,6 @@ module.exports = client => {
         { name: "Unbanned By", value: entry?.executor ? `${entry.executor.tag} (${entry.executor.id})` : "Unknown" }
       )
       .setTimestamp();
-
     await sendLog(ban.guild, "banRemove", embed);
   });
 };
