@@ -15,13 +15,12 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+
 const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   if (command && command.data && command.execute) {
     client.commands.set(command.data.name, command);
-  } else {
-    console.warn(`⚠️ Il file ${file} non esporta un comando valido e sarà ignorato.`);
   }
 }
 
@@ -33,9 +32,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(err => console.error(err));
 
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
-  client.user.setActivity('your server logs', { type: 'WATCHING' });
+  client.user.setActivity("your server logs", { type: "WATCHING" });
 });
 
 client.on("interactionCreate", async interaction => {

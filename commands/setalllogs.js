@@ -1,45 +1,29 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
+
+const ALL_LOGS = [
+  "memberAdd", "memberRemove", "banAdd", "banRemove",
+  "messageDelete", "messageUpdate", "roleCreate", "roleUpdate",
+  "roleDelete", "channelCreate", "channelUpdate", "channelDelete",
+  "emojiCreate", "emojiDelete"
+];
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setalllogs")
-    .setDescription("Abilita tutti i log nel canale selezionato")
-    .addChannelOption(option =>
-      option.setName("channel")
-        .setDescription("Canale dove inviare i log")
-        .setRequired(true)
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .setDescription("Enable all logs in a specific channel")
+    .addChannelOption(opt => opt.setName("channel").setDescription("Channel to send logs").setRequired(true)),
 
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
     let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
+    if (!config) config = await GuildConfig.create({ guildId: interaction.guild.id, logs: {} });
 
-    if (!config) {
-      config = new GuildConfig({
-        guildId: interaction.guild.id,
-        logs: {}
-      });
+    for (const log of ALL_LOGS) {
+      config.logs[log] = { enabled: true, channelId: channel.id };
     }
-
-    const logTypes = [
-      "memberAdd", "memberRemove", "banAdd", "banRemove",
-      "messageDelete", "messageUpdate",
-      "roleCreate", "roleUpdate", "roleDelete",
-      "channelCreate", "channelUpdate", "channelDelete",
-      "emojiCreate", "emojiDelete"
-    ];
-
-    for (const type of logTypes) {
-      config.logs[type] = { enabled: true, channelId: channel.id };
-    }
-
     await config.save();
 
-    return interaction.reply({
-      content: `✅ Tutti i log sono stati abilitati nel canale ${channel}`,
-      ephemeral: true
-    });
+    await interaction.reply({ content: `✅ All logs enabled in ${channel}`, ephemeral: true });
   }
 };

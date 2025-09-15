@@ -4,44 +4,20 @@ const GuildConfig = require("../models/GuildConfig");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setlog")
-    .setDescription("Abilita o disabilita un log specifico")
-    .addStringOption(option =>
-      option.setName("log")
-        .setDescription("Il tipo di log")
-        .setRequired(true)
-        .addChoices(
-          { name: "memberAdd", value: "memberAdd" },
-          { name: "memberRemove", value: "memberRemove" },
-          { name: "banAdd", value: "banAdd" },
-          { name: "banRemove", value: "banRemove" },
-          { name: "messageDelete", value: "messageDelete" },
-          { name: "messageUpdate", value: "messageUpdate" }
-        ))
-    .addBooleanOption(option =>
-      option.setName("enable")
-        .setDescription("Abilita o disabilita il log")
-        .setRequired(true))
-    .addChannelOption(option =>
-      option.setName("channel")
-        .setDescription("Il canale dove inviare i log")
-        .setRequired(false)),
+    .setDescription("Set a specific log type to a channel")
+    .addStringOption(opt => opt.setName("type").setDescription("Log type").setRequired(true))
+    .addChannelOption(opt => opt.setName("channel").setDescription("Channel to send logs").setRequired(true)),
 
   async execute(interaction) {
-    const logType = interaction.options.getString("log");
-    const enable = interaction.options.getBoolean("enable");
+    const type = interaction.options.getString("type");
     const channel = interaction.options.getChannel("channel");
 
     let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) {
-      config = new GuildConfig({ guildId: interaction.guild.id, logs: {} });
-    }
+    if (!config) config = await GuildConfig.create({ guildId: interaction.guild.id, logs: {} });
 
-    config.logs[logType] = {
-      enabled: enable,
-      channelId: channel?.id || config.logs[logType]?.channelId || null
-    };
-
+    config.logs[type] = { enabled: true, channelId: channel.id };
     await config.save();
-    await interaction.reply({ content: `✅ Logs per ${logType} aggiornati.`, ephemeral: true });
-  },
+
+    await interaction.reply({ content: `✅ Logs for ${type} will be sent in ${channel}`, ephemeral: true });
+  }
 };
