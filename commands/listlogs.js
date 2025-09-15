@@ -4,30 +4,19 @@ const GuildConfig = require("../models/GuildConfig");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("listlogs")
-    .setDescription("Mostra i canali configurati per i log"),
-
+    .setDescription("Show log settings"),
   async execute(interaction) {
     const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-
-    if (!config || !config.logs) {
-      return interaction.reply({
-        content: "❌ Nessun log configurato.",
-        flags: 64
-      });
-    }
-
-    const fields = Object.entries(config.logs).map(([type, data]) => ({
-      name: type,
-      value: data.enabled ? `<#${data.channelId}>` : "❌ Disabilitato",
-      inline: true
-    }));
-
     const embed = new EmbedBuilder()
-      .setTitle("📋 Log configurati")
-      .addFields(fields)
-      .setColor("Blue")
-      .setTimestamp();
-
-    await interaction.reply({ embeds: [embed], flags: 64 });
+      .setTitle(`📑 Log Settings for ${interaction.guild.name}`)
+      .setColor("Blue");
+    if (!config || !config.logs) {
+      embed.setDescription("No logs configured");
+    } else {
+      for (const [key, value] of Object.entries(config.logs)) {
+        embed.addFields({ name: key, value: `${value.enabled ? "✅ Enabled" : "❌ Disabled"}\nChannel: ${value.channelId ? `<#${value.channelId}>` : "None"}`, inline: false });
+      }
+    }
+    await interaction.reply({ embeds: [embed], ephemeral: true });
   }
 };

@@ -9,37 +9,35 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildBans,
-    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.MessageContent
   ],
   partials: [Partials.Channel, Partials.Message],
 });
 
 client.commands = new Collection();
 
-const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  if (command && command.data && command.execute) {
-    client.commands.set(command.data.name, command);
-  } else {
-    console.warn(`⚠️ Il file ${file} non esporta un comando valido e sarà ignorato.`);
-  }
-}
+fs.readdirSync("./commands")
+  .filter(f => f.endsWith(".js"))
+  .forEach(file => {
+    const command = require(`./commands/${file}`);
+    if (command?.data?.name && command.execute) {
+      client.commands.set(command.data.name, command);
+    }
+  });
 
-fs.readdirSync("./events").filter(f => f.endsWith(".js")).forEach(file => {
-  require(`./events/${file}`)(client);
-});
+fs.readdirSync("./events")
+  .filter(f => f.endsWith(".js"))
+  .forEach(file => {
+    require(`./events/${file}`)(client);
+  });
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error(err));
+  .catch(console.error);
 
-client.once("ready", () => {
+client.once("clientReady", () => {
+  client.user.setActivity("your server logs", { type: "WATCHING" });
   console.log(`✅ Logged in as ${client.user.tag}`);
-  client.user.setPresence({
-    activities: [{ name: "your server logs", type: 3 }], // Watching
-    status: "online",
-  });
 });
 
 client.on("interactionCreate", async interaction => {
@@ -50,9 +48,7 @@ client.on("interactionCreate", async interaction => {
     await command.execute(interaction);
   } catch (err) {
     console.error(err);
-    if (!interaction.replied) {
-      await interaction.reply({ content: "❌ Error executing command.", flags: 64 });
-    }
+    if (!interaction.replied) await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
   }
 });
 

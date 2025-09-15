@@ -4,35 +4,16 @@ const GuildConfig = require("../models/GuildConfig");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setalllogs")
-    .setDescription("Imposta tutti i log in un unico canale")
-    .addChannelOption(option =>
-      option.setName("channel")
-        .setDescription("Il canale in cui inviare tutti i log")
-        .setRequired(true)
-    ),
+    .setDescription("Enable all logs in the specified channel")
+    .addChannelOption(option => option.setName("channel").setDescription("The channel to send logs").setRequired(true)),
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
-
-    const logTypes = [
-      "memberAdd",
-      "memberRemove",
-      "banAdd",
-      "banRemove",
-      "messageDelete",
-      "messageUpdate"
-    ];
-
-    const logsConfig = {};
-    for (const type of logTypes) {
-      logsConfig[type] = { enabled: true, channelId: channel.id };
-    }
-
-    await GuildConfig.findOneAndUpdate(
+    const logsTypes = ["memberAdd","memberRemove","banAdd","banRemove","messageDelete","messageUpdate","roleCreate","roleUpdate","roleDelete","channelCreate","channelUpdate","channelDelete","emojiCreate","emojiDelete"];
+    await GuildConfig.updateOne(
       { guildId: interaction.guild.id },
-      { $set: { logs: logsConfig } },
+      { $set: Object.fromEntries(logsTypes.map(type => [ `logs.${type}`, { enabled: true, channelId: channel.id } ])) },
       { upsert: true }
     );
-
-    await interaction.reply(`✅ Tutti i log sono stati impostati su ${channel}`);
+    await interaction.reply({ content: `✅ Tutti i log sono stati impostati su ${channel}`, ephemeral: true });
   }
 };
