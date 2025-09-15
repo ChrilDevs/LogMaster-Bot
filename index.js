@@ -9,31 +9,34 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildBans,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Channel, Partials.Message],
 });
 
 client.commands = new Collection();
 
-fs.readdirSync("./commands")
-  .filter(f => f.endsWith(".js"))
-  .forEach(file => {
-    const command = require(`./commands/${file}`);
-    if (command?.data?.name && command.execute) client.commands.set(command.data.name, command);
-  });
+const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  if (command && command.data && command.execute) {
+    client.commands.set(command.data.name, command);
+  } else {
+    console.warn(`⚠️ Il file ${file} non esporta un comando valido e sarà ignorato.`);
+  }
+}
 
-fs.readdirSync("./events")
-  .filter(f => f.endsWith(".js"))
-  .forEach(file => require(`./events/${file}`)(client));
+fs.readdirSync("./events").filter(f => f.endsWith(".js")).forEach(file => {
+  require(`./events/${file}`)(client);
+});
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch(console.error);
+  .catch(err => console.error(err));
 
-client.once("clientReady", () => {
-  client.user.setActivity("your server logs", { type: "WATCHING" });
+client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+  client.user.setActivity("your server logs", { type: "WATCHING" });
 });
 
 client.on("interactionCreate", async interaction => {
@@ -44,7 +47,9 @@ client.on("interactionCreate", async interaction => {
     await command.execute(interaction);
   } catch (err) {
     console.error(err);
-    if (!interaction.replied) await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
+    if (!interaction.replied) {
+      await interaction.reply({ content: "❌ Error executing command.", ephemeral: true });
+    }
   }
 });
 
