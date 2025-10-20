@@ -1,49 +1,42 @@
 const { SlashCommandBuilder, ChannelType } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
+const TYPES = [
+  "botAdd","botKick",
+  "memberAdd","memberRemove","memberKick",
+  "banAdd","banRemove",
+  "messageDelete","messageUpdate",
+  "roleCreate","roleUpdate","roleDelete",
+  "channelCreate","channelUpdate","channelDelete",
+  "emojiCreate","emojiUpdate","emojiDelete"
+];
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setlog")
-    .setDescription("Set a log type to a channel")
-    .addStringOption(option =>
-      option.setName("type")
-        .setDescription("Select the log type")
-        .setRequired(true)
-        .addChoices(
-          { name: "Member Join", value: "memberAdd" },
-          { name: "Member Leave", value: "memberRemove" },
-          { name: "Ban Add", value: "banAdd" },
-          { name: "Ban Remove", value: "banRemove" },
-          { name: "Message Delete", value: "messageDelete" },
-          { name: "Message Update", value: "messageUpdate" },
-          { name: "Role Create", value: "roleCreate" },
-          { name: "Role Update", value: "roleUpdate" },
-          { name: "Role Delete", value: "roleDelete" },
-          { name: "Channel Create", value: "channelCreate" },
-          { name: "Channel Update", value: "channelUpdate" },
-          { name: "Channel Delete", value: "channelDelete" },
-          { name: "Emoji Create", value: "emojiCreate" },
-          { name: "Emoji Delete", value: "emojiDelete" }
-        )
+    .setDescription("Set a specific log type to a channel and enable/disable it")
+    .addStringOption(o =>
+      o.setName("type").setDescription("Log type").setRequired(true)
+       .addChoices(...TYPES.map(t => ({ name: t, value: t })))
     )
-    .addChannelOption(option =>
-      option.setName("channel")
-        .setDescription("Select the channel to send logs")
+    .addChannelOption(o =>
+      o.setName("channel").setDescription("Channel to send logs").setRequired(true)
         .addChannelTypes(ChannelType.GuildText)
-        .setRequired(true)
+    )
+    .addBooleanOption(o =>
+      o.setName("enabled").setDescription("Enable this log?").setRequired(true)
     ),
   async execute(interaction) {
     const type = interaction.options.getString("type");
     const channel = interaction.options.getChannel("channel");
+    const enabled = interaction.options.getBoolean("enabled");
 
-    let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) {
-      config = new GuildConfig({ guildId: interaction.guild.id });
-    }
+    let cfg = await GuildConfig.findOne({ guildId: interaction.guild.id });
+    if (!cfg) cfg = new GuildConfig({ guildId: interaction.guild.id });
 
-    config.logs[type] = { enabled: true, channelId: channel.id };
-    await config.save();
+    cfg.logs[type] = { enabled, channelId: channel.id };
+    await cfg.save();
 
-    await interaction.reply({ content: `✅ Log for **${type}** set to ${channel}`, ephemeral: true });
-  },
+    await interaction.reply({ content: `✅ \`${type}\` is now ${enabled ? "enabled" : "disabled"} in ${channel}.` });
+  }
 };

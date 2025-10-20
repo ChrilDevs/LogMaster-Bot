@@ -1,29 +1,32 @@
 const { SlashCommandBuilder, ChannelType } = require("discord.js");
 const GuildConfig = require("../models/GuildConfig");
 
+const TYPES = [
+  "botAdd","botKick",
+  "memberAdd","memberRemove","memberKick",
+  "banAdd","banRemove",
+  "messageDelete","messageUpdate",
+  "roleCreate","roleUpdate","roleDelete",
+  "channelCreate","channelUpdate","channelDelete",
+  "emojiCreate","emojiUpdate","emojiDelete"
+];
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setalllogs")
-    .setDescription("Set all logs to a channel")
-    .addChannelOption(option =>
-      option.setName("channel")
-        .setDescription("Select the channel to send all logs")
+    .setDescription("Enable and set ALL logs to a channel")
+    .addChannelOption(o =>
+      o.setName("channel").setDescription("Channel for all logs").setRequired(true)
         .addChannelTypes(ChannelType.GuildText)
-        .setRequired(true)
     ),
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
+    let cfg = await GuildConfig.findOne({ guildId: interaction.guild.id });
+    if (!cfg) cfg = new GuildConfig({ guildId: interaction.guild.id });
 
-    let config = await GuildConfig.findOne({ guildId: interaction.guild.id });
-    if (!config) {
-      config = new GuildConfig({ guildId: interaction.guild.id });
-    }
+    for (const t of TYPES) cfg.logs[t] = { enabled: true, channelId: channel.id };
+    await cfg.save();
 
-    for (const key of Object.keys(config.logs)) {
-      config.logs[key] = { enabled: true, channelId: channel.id };
-    }
-
-    await config.save();
-    await interaction.reply({ content: `✅ All logs have been set to ${channel}`, ephemeral: true });
-  },
+    await interaction.reply({ content: `✅ All logs enabled in ${channel}.` });
+  }
 };

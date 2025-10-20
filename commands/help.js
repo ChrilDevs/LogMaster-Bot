@@ -3,27 +3,18 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("help")
-    .setDescription("Show all available commands"),
-
+    .setDescription("How to use LogMaster"),
   async execute(interaction) {
-    const embed = new EmbedBuilder()
-      .setColor("Blue")
-      .setTitle("LogMaster Bot Commands")
-      .setDescription("Here are the commands you can use:")
+    const e = new EmbedBuilder()
+      .setColor(0x3B82F6)
+      .setTitle("📖 LogMaster — Help")
       .addFields(
-        { name: "/setlog", value: "Set a channel for specific logs (Admin only)" },
-        { name: "/togglelog", value: "Enable or disable a specific log type" },
-        { name: "/listlogs", value: "List all configured logs for this server" },
-        { name: "/help", value: "Show this help message" },
-        { name: "Tip", value: "You can set all logs to one channel using `/setalllogs`" }
+        { name: "/setalllogs <channel>", value: "Enable ALL log types to one channel." },
+        { name: "/setlog <type> <channel> <enabled>", value: "Configure a single log type: channel and on/off." },
+        { name: "/togglelog <type>", value: "Enable or disable a specific log without changing channel." },
+        { name: "/listlogs", value: "Show current configuration and channels." }
       )
-      .setTimestamp()
-      .setFooter({ text: "LogMaster v1" });
-
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ embeds: [embed] });
-    } else {
-      await interaction.editReply({ embeds: [embed] });
-    }
+      .setTimestamp();
+    await interaction.reply({ embeds: [e] });
   }
 };

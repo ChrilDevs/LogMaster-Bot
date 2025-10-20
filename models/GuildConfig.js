@@ -1,28 +1,32 @@
-const mongoose = require("mongoose");
+const { Schema, model } = require("mongoose");
 
-const logSchema = new mongoose.Schema({
+const logSchema = new Schema({
   enabled: { type: Boolean, default: false },
   channelId: { type: String, default: null }
 }, { _id: false });
 
-const guildConfigSchema = new mongoose.Schema({
-  guildId: { type: String, unique: true },
+const guildSchema = new Schema({
+  guildId: { type: String, unique: true, required: true },
   logs: {
-    memberAdd: logSchema,
-    memberRemove: logSchema,
-    banAdd: logSchema,
-    banRemove: logSchema,
-    messageDelete: logSchema,
-    messageUpdate: logSchema,
-    roleCreate: logSchema,
-    roleUpdate: logSchema,
-    roleDelete: logSchema,
-    channelCreate: logSchema,
-    channelUpdate: logSchema,
-    channelDelete: logSchema,
-    emojiCreate: logSchema,
-    emojiDelete: logSchema
+    memberAdd: { type: logSchema, default: () => ({}) },
+    memberRemove: { type: logSchema, default: () => ({}) },
+    memberKick: { type: logSchema, default: () => ({}) },
+    botAdd: { type: logSchema, default: () => ({}) },
+    botKick: { type: logSchema, default: () => ({}) },
+    banAdd: { type: logSchema, default: () => ({}) },
+    banRemove: { type: logSchema, default: () => ({}) },
+    messageDelete: { type: logSchema, default: () => ({}) },
+    messageUpdate: { type: logSchema, default: () => ({}) },
+    roleCreate: { type: logSchema, default: () => ({}) },
+    roleUpdate: { type: logSchema, default: () => ({}) },
+    roleDelete: { type: logSchema, default: () => ({}) },
+    channelCreate: { type: logSchema, default: () => ({}) },
+    channelUpdate: { type: logSchema, default: () => ({}) },
+    channelDelete: { type: logSchema, default: () => ({}) },
+    emojiCreate: { type: logSchema, default: () => ({}) },
+    emojiDelete: { type: logSchema, default: () => ({}) },
+    emojiUpdate: { type: logSchema, default: () => ({}) }
   }
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model("GuildConfig", guildConfigSchema);
+module.exports = model("GuildConfig", guildSchema);
